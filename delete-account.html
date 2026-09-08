@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Delete Account — RealmOX</title><link rel="stylesheet" href="assets/style.css"><script src="config.js"></script><script src="assets/app.js" defer></script></head><body>
+<header><div class="container nav"><a class="brand" href="index.html"><span class="logo">R</span>RealmOX</a><nav><a href="index.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="referral-rules.html">Referral Rules</a><a href="support.html">Support</a><a class="active" href="delete-account.html">Delete Account</a></nav></div></header>
+<main><div class="container"><div class="eyebrow">Account Control</div><h1>Delete your RealmOX account</h1><p class="lead">This page lets you request permanent deletion of your RealmOX account and associated application data without reinstalling the app.</p>
+<div class="notice warning"><p><b>This cannot be undone.</b> Account deletion removes your RealmOX account and associated application data that is subject to deletion. Limited information may be retained where legally or operationally necessary, as described in the <a href="privacy.html">Privacy Policy</a>.</p></div>
+<h2>Before you continue</h2><ul><li>If you have an active Google Play subscription, cancel it through Google Play first so you can manage future renewals.</li><li>You must authenticate with your current RealmOX password.</li><li>Google-only accounts must first have a RealmOX password set through the app's account-setup/password flow.</li><li>Never enter your Google password here unless it is also the RealmOX password you created for RealmOX. RealmOX does not ask for your Google password.</li></ul>
+<h2>Confirm deletion</h2><form id="deleteForm"><label for="email">RealmOX account email</label><input id="email" type="email" autocomplete="username" required><label for="password">RealmOX password</label><input id="password" type="password" autocomplete="current-password" required><label for="confirm">Type DELETE to confirm</label><input id="confirm" type="text" required pattern="DELETE" placeholder="DELETE"><div class="actions"><button class="button danger" type="submit">Permanently Delete Account</button></div><div id="status" class="status"></div></form>
+<p class="meta">Your password is sent only over HTTPS to the RealmOX backend for authentication and is not stored by this website. The access token returned after login is kept only in memory for the immediate deletion request.</p>
+</div></main><footer><div class="container"><div class="footer-links"><a href="index.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="referral-rules.html">Referral Rules</a><a href="support.html">Support</a></div></div></footer>
+<script>
+document.getElementById('deleteForm').addEventListener('submit', async function(e){
+  e.preventDefault(); const status=document.getElementById('status');
+  const email=document.getElementById('email').value.trim().toLowerCase(); const password=document.getElementById('password').value; const confirm=document.getElementById('confirm').value.trim();
+  if(confirm!=='DELETE'){ window.showStatus(status,'Type DELETE exactly to confirm.',false); return; }
+  window.showStatus(status,'Authenticating…',true);
+  try {
+    const login=await window.realmoxApi('/login',{method:'POST',body:JSON.stringify({email,password})});
+    const token=login?.data?.access_token;
+    if(!token) throw new Error('Authentication succeeded but no access token was returned.');
+    window.showStatus(status,'Deleting your account…',true);
+    await window.realmoxApi('/delete-account',{method:'DELETE',headers:{Authorization:'Bearer '+token},body:JSON.stringify({current_password:password})});
+    document.getElementById('deleteForm').reset();
+    window.showStatus(status,'Your RealmOX account and associated application data have been deleted. You can close this page now.',true);
+  } catch(err) {
+    window.showStatus(status,err.message || 'Unable to delete the account right now. Please try again.',false);
+  }
+});
+</script></body></html>

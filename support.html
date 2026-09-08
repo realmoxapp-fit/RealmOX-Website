@@ -1,0 +1,18 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Help & Support — RealmOX</title><link rel="stylesheet" href="assets/style.css"><script src="config.js"></script><script src="assets/app.js" defer></script></head><body>
+<header><div class="container nav"><a class="brand" href="index.html"><span class="logo">R</span>RealmOX</a><nav><a href="index.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="referral-rules.html">Referral Rules</a><a class="active" href="support.html">Support</a><a href="delete-account.html">Delete Account</a></nav></div></header>
+<main><div class="container"><div class="eyebrow">Support</div><h1>Help & Support</h1><p class="lead">Use the form below for a privacy question, account issue, deletion question, bug or general feedback. The public website is also available if you cannot open the app.</p>
+<div class="grid"><div class="card"><h3>In-app support</h3><p>Signed-in users can use Help & Support to submit a bug report or feedback. Support notifications are routed to the RealmOX administrator through the configured support channel.</p></div><div class="card"><h3>Privacy & deletion</h3><p>For account deletion, use the dedicated <a href="delete-account.html">Delete Account</a> page. For other privacy requests, mention “Privacy Request” in your message.</p></div><div class="card"><h3>Premium</h3><p>For Google Play subscriptions, use <a href="https://play.google.com/store/account/subscriptions" target="_blank" rel="noopener">Google Play subscription management</a> to review or cancel your subscription.</p></div></div>
+<section><h2>Contact & privacy requests</h2><div class="card"><h3>Use the in-app Help & Support</h3><p>Signed-in users can submit bug reports and feedback directly from RealmOX. These reports are stored with the account and may be forwarded to the RealmOX administrator through the configured support channel.</p><p>For a privacy request, clearly state that your message is a privacy request and describe what you need. Do not send passwords, authentication tokens, payment-card numbers or other secrets.</p></div><div class="actions"><a class="button" href="delete-account.html">Delete my account</a><a class="button secondary" href="privacy.html">Privacy Policy</a></div></section>
+</div></main><footer><div class="container"><div class="footer-links"><a href="index.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="referral-rules.html">Referral Rules</a><a href="delete-account.html">Delete Account</a></div></div></footer>
+<script>
+document.getElementById('supportForm').addEventListener('submit', async function(e){
+  e.preventDefault(); const status=document.getElementById('status');
+  const email=document.getElementById('email').value.trim(); const message=document.getElementById('message').value.trim();
+  window.showStatus(status,'Sending…',true);
+  try {
+    // Public website support is intentionally not wired to the authenticated app endpoint.
+    // This form is a contact UI placeholder until a public support endpoint is enabled.
+    throw new Error('Public support submission is not enabled yet. Please use in-app Help & Support, or use the Delete Account page for deletion requests.');
+  } catch(err) { window.showStatus(status,err.message,false); }
+});
+</script></body></html>
