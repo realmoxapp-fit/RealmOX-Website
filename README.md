@@ -5,7 +5,7 @@ This folder is a static public website intended for GitHub Pages. It contains:
 - About / app information
 - Privacy Policy
 - Terms & Conditions
-- Official ₹10 Referral Programme Rules
+- Official RealmOX Currency Referral Programme Rules
 - Help & Support information
 - Public account deletion page
 
