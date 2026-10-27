@@ -8,6 +8,7 @@ This folder is a static public website intended for GitHub Pages. It contains:
 - Official RealmOX Currency Referral Programme Rules
 - Help & Support information
 - Public account deletion page
+- Restricted tournament and task admin (`admin.html`)
 
 ## GitHub Pages
 
@@ -33,3 +34,4 @@ The public deletion page calls the existing RealmOX `/login` and `/delete-accoun
 6. Add the public Delete Account URL to the Google Play Console Data deletion section.
 7. Complete the Play Console Data safety form so it exactly matches the final app and policy disclosures.
 8. Confirm the developer/operator name used on the Play listing is represented accurately in the legal pages.
+9. Deploy the backend version that includes `/admin/*` before publishing the admin page. Add the website host to Firebase Authentication authorized domains and the exact website origin to production `CORS_ALLOWED_ORIGINS`. Admin access is restricted to `deviluse123@gmail.com` by the backend.

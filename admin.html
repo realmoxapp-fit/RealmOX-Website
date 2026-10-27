@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin — RealmOX</title><link rel="stylesheet" href="assets/style.css">
+  <style>
+    .admin-shell{max-width:980px;margin:auto}.admin-card{background:linear-gradient(180deg,var(--card-2),var(--card));border:1px solid var(--border);border-radius:18px;padding:22px;margin:18px 0}.admin-card h2{margin:0 0 8px}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.admin-grid .full{grid-column:1/-1}.admin-note{font-size:.9rem}.hidden{display:none!important}.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.code-field{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.88rem;min-height:180px}.status{white-space:pre-wrap}@media(max-width:700px){.admin-grid{grid-template-columns:1fr}.admin-grid .full{grid-column:auto}}
+  </style>
+</head>
+<body>
+<header><div class="container nav"><a class="brand" href="index.html"><span class="logo">R</span>RealmOX Admin</a><nav><a href="index.html">Website</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></nav></div></header>
+<main><div class="container admin-shell">
+  <div class="eyebrow">Restricted access</div><h1>RealmOX Admin</h1>
+  <p class="lead">Manage this month’s tournament prizes, rules, and task rewards. Changes are checked by the RealmOX server.</p>
+  <section id="loginPanel" class="admin-card">
+    <h2>Sign in</h2><p>Use the administrator account to continue.</p>
+    <form id="loginForm"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
+      <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+      <div class="actions"><button class="button" type="submit">Sign in securely</button></div>
+    </form><div id="loginStatus" class="status"></div>
+  </section>
+  <section id="adminPanel" class="hidden">
+    <div class="admin-card"><div class="top-actions"><div><h2>Tournament settings</h2><div id="signedInAs" class="meta"></div></div><button id="signOut" class="button secondary" type="button">Sign out</button></div>
+      <div class="admin-grid">
+        <div><label for="monthKey">Tournament month (YYYY_MM)</label><input id="monthKey" inputmode="numeric"></div>
+        <div><label for="tournamentTitle">Tournament name</label><input id="tournamentTitle"></div>
+        <div><label for="rewardTitle">Monthly title</label><input id="rewardTitle"></div>
+        <div class="full"><label for="rewardDescription">Prize summary</label><textarea id="rewardDescription"></textarea></div>
+        <div><label for="rules">Tournament rules (JSON list)</label><textarea id="rules" class="code-field"></textarea></div>
+        <div><label for="rewards">Prize assets / physical rewards (JSON list)</label><textarea id="rewards" class="code-field"></textarea></div>
+        <p class="admin-note full">Use reward items with <code>rank</code>, <code>kind</code>, <code>category</code>, <code>name</code>, <code>description</code>, optional <code>image_url</code>, and optional <code>fulfillment_notes</code>. Configure frame entries for ranks 1–5 and avatar entries for ranks 1–10. A category <code>rc</code> row at rank 1 sets top-3 RC; rank 11 sets RC for ranks 11 onward. Defaults: 2,500 and 100 RC.</p>
+        <div class="full"><label for="assetFile">Upload tournament artwork</label><div class="top-actions"><select id="assetCategory"><option value="avatar">Avatar</option><option value="frame">Frame (transparent PNG)</option><option value="other">Other prize art</option></select><input id="assetFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadAsset" class="button secondary" type="button">Upload image</button></div><input id="uploadedAssetUrl" readonly placeholder="Uploaded image URL appears here"><small>Copy the URL into the matching prize’s image_url field above and save.</small></div>
+      </div><div class="actions"><button id="loadTournament" class="button secondary" type="button">Load month</button><button id="saveTournament" class="button" type="button">Save tournament</button></div><div id="tournamentStatus" class="status"></div>
+    </div>
+    <div class="admin-card"><h2>Tasks and task rewards</h2><p class="admin-note">Use requirement_type <code>total_workouts</code>, <code>best_streak</code>, or <code>level</code>. Tasks can grant title_reward and/or badge_reward.</p>
+      <label for="tasks">Task definitions (JSON list)</label><textarea id="tasks" class="code-field" style="min-height:360px"></textarea>
+      <div class="actions"><button id="loadTasks" class="button secondary" type="button">Load tasks</button><button id="saveTasks" class="button" type="button">Save tasks</button></div><div id="tasksStatus" class="status"></div>
+    </div>
+  </section>
+  <div id="accessStatus" class="status"></div>
+</div></main>
+<script src="config.js"></script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+  const config = window.REALMOX_CONFIG || {};
+  const app = initializeApp(config.firebase);
+  const auth = getAuth(app);
+  const $ = id => document.getElementById(id);
+  const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}`; };
+  const rewardTemplate = () => [
+    {rank:1,kind:'digital',category:'rc',name:'Top 3 RC',amount_rc:2500},
+    {rank:11,kind:'digital',category:'rc',name:'Participation RC',amount_rc:100},
+    ...Array.from({length:5},(_,i)=>({rank:i+1,kind:'digital',category:'frame',name:'Monthly Tournament Frame',description:'Awarded to tournament ranks 1–5.',image_url:''})),
+    ...Array.from({length:10},(_,i)=>({rank:i+1,kind:'digital',category:'avatar',name:'Monthly Tournament Avatar',description:'Awarded to tournament ranks 1–10.',image_url:''}))
+  ];
+  $('monthKey').value = currentMonth();
+  const status = (id, message, ok=false) => { const el=$(id); el.textContent=message; el.className=`status show ${ok?'ok':'error'}`; };
+  const showUser = user => {
+    const allowed = user?.email?.trim().toLowerCase() === 'deviluse123@gmail.com';
+    $('loginPanel').classList.toggle('hidden', allowed);
+    $('adminPanel').classList.toggle('hidden', !allowed);
+    $('signedInAs').textContent = user ? `Signed in as ${user.email}` : '';
+    if (user && !allowed) status('accessStatus','This account does not have admin access. Sign in with the authorized admin account.');
+    else { $('accessStatus').className='status'; if (allowed) { loadTournament(); loadTasks(); } }
+  };
+  onAuthStateChanged(auth, showUser);
+  $('loginForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    try { await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value); $('password').value=''; }
+    catch (error) { status('loginStatus',error.message || 'Sign in failed.'); }
+  });
+  $('signOut').onclick = () => signOut(auth);
+  async function api(path, options={}) {
+    const token = await auth.currentUser?.getIdToken(true);
+    if (!token) throw new Error('Sign in again to continue.');
+    const response = await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}${path}`, {
+      ...options, headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(options.headers||{})}
+    });
+    const data=await response.json().catch(()=>null);
+    if(!response.ok) throw new Error(data?.detail || `Request failed (${response.status}).`);
+    return data;
+  }
+  async function uploadAsset() {
+    const file=$('assetFile').files?.[0];
+    if(!file) { status('tournamentStatus','Choose an image first.'); return; }
+    try {
+      const token=await auth.currentUser?.getIdToken(true); const form=new FormData();
+      form.append('file',file); form.append('category',$('assetCategory').value);
+      const response=await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}/admin/tournament-assets`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});
+      const data=await response.json().catch(()=>null); if(!response.ok) throw new Error(data?.detail||`Upload failed (${response.status}).`);
+      $('uploadedAssetUrl').value=data.image_url||''; status('tournamentStatus','Artwork uploaded. Copy its URL into the matching prize entry.',true);
+    } catch(error) { status('tournamentStatus',error.message); }
+  }
+  async function loadTournament() {
+    try { const data=await api(`/admin/tournament/${encodeURIComponent($('monthKey').value.trim())}`);
+      $('tournamentTitle').value=data.title||''; $('rewardTitle').value=data.reward_title||''; $('rewardDescription').value=data.reward_description||'';
+      $('rules').value=JSON.stringify(data.rules||[],null,2); $('rewards').value=JSON.stringify(data.rewards?.length ? data.rewards : rewardTemplate(),null,2);
+      status('tournamentStatus','Tournament settings loaded.',true);
+    } catch(error) { status('tournamentStatus',error.message); }
+  }
+  async function saveTournament() {
+    try { const rules=JSON.parse($('rules').value||'[]'); const rewards=JSON.parse($('rewards').value||'[]');
+      if(!Array.isArray(rules)||!Array.isArray(rewards)) throw new Error('Rules and rewards must be JSON lists.');
+      await api('/admin/tournament',{method:'PUT',body:JSON.stringify({month_key:$('monthKey').value.trim(),title:$('tournamentTitle').value.trim()||'RealmOX Monthly Tournament',reward_title:$('rewardTitle').value.trim(),reward_description:$('rewardDescription').value.trim(),rules,rewards})});
+      status('tournamentStatus','Tournament settings saved.',true);
+    } catch(error) { status('tournamentStatus',error.message); }
+  }
+  async function loadTasks() { try { const tasks=await api('/admin/tasks'); $('tasks').value=JSON.stringify(tasks,null,2); status('tasksStatus','Task definitions loaded.',true); } catch(error) { status('tasksStatus',error.message); } }
+  async function saveTasks() { try { const tasks=JSON.parse($('tasks').value||'[]'); if(!Array.isArray(tasks)) throw new Error('Tasks must be a JSON list.'); await api('/admin/tasks',{method:'PUT',body:JSON.stringify(tasks)}); status('tasksStatus','Tasks and rewards saved.',true); } catch(error) { status('tasksStatus',error.message); } }
+  $('loadTournament').onclick=loadTournament; $('saveTournament').onclick=saveTournament; $('loadTasks').onclick=loadTasks; $('saveTasks').onclick=saveTasks; $('uploadAsset').onclick=uploadAsset;
+</script>
+</body></html>
