@@ -46,6 +46,12 @@
   const config = window.REALMOX_CONFIG || {};
   const app = initializeApp(config.firebase);
   const auth = getAuth(app);
+  // Some older/Google-setup RealmOX accounts authenticate with the backend
+  // password hash instead of a Firebase email/password provider. Keep the
+  // resulting short-lived RealmOX token in memory only, matching the app's
+  // Firebase-first, backend-fallback login behavior.
+  let backendAccessToken = null;
+  let backendAccountEmail = null;
   const $ = id => document.getElementById(id);
   const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}`; };
   const rewardTemplate = () => [
@@ -57,22 +63,53 @@
   $('monthKey').value = currentMonth();
   const status = (id, message, ok=false) => { const el=$(id); el.textContent=message; el.className=`status show ${ok?'ok':'error'}`; };
   const showUser = user => {
-    const allowed = user?.email?.trim().toLowerCase() === 'deviluse123@gmail.com';
+    const activeEmail = user?.email || backendAccountEmail;
+    const allowed = activeEmail?.trim().toLowerCase() === 'deviluse123@gmail.com';
     $('loginPanel').classList.toggle('hidden', allowed);
     $('adminPanel').classList.toggle('hidden', !allowed);
-    $('signedInAs').textContent = user ? `Signed in as ${user.email}` : '';
-    if (user && !allowed) status('accessStatus','This account does not have admin access. Sign in with the authorized admin account.');
+    $('signedInAs').textContent = activeEmail ? `Signed in as ${activeEmail}` : '';
+    if (activeEmail && !allowed) status('accessStatus','This account does not have admin access. Sign in with the authorized admin account.');
     else { $('accessStatus').className='status'; if (allowed) { loadTournament(); loadTasks(); } }
   };
   onAuthStateChanged(auth, showUser);
   $('loginForm').addEventListener('submit', async event => {
     event.preventDefault();
-    try { await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value); $('password').value=''; }
-    catch (error) { status('loginStatus',error.message || 'Sign in failed.'); }
+    const email = $('email').value.trim().toLowerCase();
+    const password = $('password').value;
+    backendAccessToken = null;
+    backendAccountEmail = null;
+    try { await signOut(auth); } catch (_) {}
+    try {
+      await signInWithEmailAndPassword(auth,email,password);
+      $('password').value='';
+    } catch (firebaseError) {
+      try {
+        const response = await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}/login`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({email,password})
+        });
+        const result = await response.json().catch(()=>null);
+        const token = result?.data?.access_token;
+        if (!response.ok || !token) throw new Error(result?.detail || `RealmOX login failed (${response.status}).`);
+        backendAccessToken = token;
+        backendAccountEmail = result?.data?.user?.email || email;
+        $('password').value='';
+        showUser(null);
+      } catch (backendError) {
+        status('loginStatus',`${firebaseError.message || 'Firebase sign-in failed.'} RealmOX account sign-in also failed: ${backendError.message || 'Check your email and password.'}`);
+      }
+    }
   });
-  $('signOut').onclick = () => signOut(auth);
+  $('signOut').onclick = async () => {
+    backendAccessToken = null;
+    backendAccountEmail = null;
+    await signOut(auth);
+    showUser(null);
+  };
   async function api(path, options={}) {
-    const token = await auth.currentUser?.getIdToken(true);
+    const token = auth.currentUser
+      ? await auth.currentUser.getIdToken(true)
+      : backendAccessToken;
     if (!token) throw new Error('Sign in again to continue.');
     const response = await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}${path}`, {
       ...options, headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(options.headers||{})}
