@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin — RealmOX</title><link rel="stylesheet" href="assets/style.css">
   <style>
-    .admin-shell{max-width:980px;margin:auto}.admin-card{background:linear-gradient(180deg,var(--card-2),var(--card));border:1px solid var(--border);border-radius:18px;padding:22px;margin:18px 0}.admin-card h2{margin:0 0 8px}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.admin-grid .full{grid-column:1/-1}.admin-note{font-size:.9rem}.hidden{display:none!important}.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.code-field{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.88rem;min-height:180px}.status{white-space:pre-wrap}.tournament-overview{white-space:pre-wrap;border:1px solid var(--border);border-radius:12px;padding:14px;margin:14px 0;background:var(--card)}.admin-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.admin-actions button{text-align:left;padding:18px;min-height:84px}.admin-dialog{width:min(900px,calc(100% - 24px));max-height:90vh;overflow:auto;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:18px;padding:12px}.admin-dialog::backdrop{background:#000b}.admin-dialog .admin-card{margin:0}.dialog-close{float:right}@media(max-width:700px){.admin-grid,.admin-actions{grid-template-columns:1fr}.admin-grid .full{grid-column:auto}}
+    .admin-shell{max-width:1120px;margin:auto}.admin-card{background:linear-gradient(145deg,var(--card-2),var(--card));border:1px solid var(--border);border-radius:22px;padding:24px;margin:18px 0;box-shadow:0 18px 55px #0003}.admin-card h2{margin:0 0 8px}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.admin-grid .full{grid-column:1/-1}.admin-note{font-size:.9rem}.hidden{display:none!important}.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.code-field{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.88rem;min-height:180px}.status{white-space:pre-wrap}.tournament-overview{white-space:pre-wrap;border:1px solid var(--border);border-radius:14px;padding:14px;margin:14px 0;background:var(--card)}.admin-hero{display:grid;grid-template-columns:1.3fr .7fr;gap:22px;align-items:center;background:radial-gradient(ellipse at 85% 20%,#caff4c24,transparent 45%),linear-gradient(145deg,#1d2b20,#101713);border:1px solid #caff4c40;border-radius:24px;padding:26px;margin-top:20px}.admin-hero .eyebrow{color:var(--accent)}.admin-hero h2{font-size:1.55rem;margin:5px 0}.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.admin-stat{border:1px solid var(--border);border-radius:16px;background:#080c0a80;padding:14px}.admin-stat strong{display:block;font-size:1.45rem;color:var(--accent)}.admin-stat span{font-size:.76rem;color:var(--muted)}.admin-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.admin-actions button{text-align:left;padding:18px;min-height:84px;border-radius:16px}.admin-dialog{width:min(1080px,calc(100% - 24px));max-height:92vh;overflow:auto;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:22px;padding:12px}.admin-dialog::backdrop{background:#000c;backdrop-filter:blur(7px)}.admin-dialog .admin-card{margin:0}.dialog-close{float:right}.library-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0}.asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:13px}.asset-tile{min-width:0;background:var(--card-2);border:1px solid var(--border);border-radius:16px;padding:12px}.asset-thumb{height:130px;display:grid;place-items:center;border-radius:12px;background:#090d0b;overflow:hidden}.asset-thumb img{max-width:100%;max-height:100%;object-fit:contain}.asset-tile strong,.asset-tile small{display:block;overflow-wrap:anywhere;margin-top:8px}.asset-tile small{color:var(--muted)}.asset-url{font-size:11px;color:var(--accent);cursor:pointer}.drop-zone{border:1px dashed var(--accent);border-radius:18px;padding:26px;text-align:center;background:#caff4c0a;transition:.18s}.drop-zone.dragover{background:#caff4c22;transform:scale(1.01)}.library-tabs{display:flex;gap:7px;flex-wrap:wrap}.library-tabs button.active{background:var(--accent);color:#101410}@media(max-width:700px){.admin-grid,.admin-actions,.admin-hero{grid-template-columns:1fr}.admin-grid .full{grid-column:auto}.admin-card{padding:17px}.admin-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.admin-stat{padding:10px 8px}.admin-stat strong{font-size:1.2rem}}
   </style>
 </head>
 <body>
@@ -20,22 +20,31 @@
     </form><div id="loginStatus" class="status"></div>
   </section>
   <section id="adminPanel" class="hidden">
-    <div class="admin-card"><div class="top-actions"><div><h2>Admin control center</h2><div id="signedInAs" class="meta"></div></div><button id="signOut" class="button secondary" type="button">Sign out</button></div>
-      <p class="admin-note">Choose one of the four panels below.</p>
+    <div class="admin-card"><div class="top-actions"><div><h2>RealmOX control center</h2><div id="signedInAs" class="meta"></div></div><button id="signOut" class="button secondary" type="button">Sign out</button></div>
+      <section class="admin-hero"><div><div class="eyebrow">LIVE TOURNAMENT</div><h2 id="dashboardTournamentName">Loading current tournament…</h2><p id="dashboardTournamentStatus" class="admin-note">Tournament activity and reward distribution at a glance.</p><button class="button" type="button" data-open="currentTournamentPopup">Manage current tournament</button><p id="dashboardLeaders" class="admin-note"></p></div><div class="admin-stats"><div class="admin-stat"><strong id="dashboardParticipants">—</strong><span>PARTICIPANTS</span></div><div class="admin-stat"><strong id="dashboardAwards">—</strong><span>AWARDS SENT</span></div><div class="admin-stat"><strong id="dashboardStatus">—</strong><span>STATUS</span></div></div></section>
+      <p class="admin-note">Tournament control, reward planning, task management, and shared artwork all live here.</p>
       <div class="admin-actions">
         <button class="button secondary" type="button" data-open="currentTournamentPopup">Current tournament details and edit</button>
         <button class="button secondary" type="button" data-open="nextTournamentPopup">Next tournament</button>
         <button class="button secondary" type="button" data-open="currentTasksPopup">Current tasks and their rewards</button>
         <button class="button secondary" type="button" data-open="newTasksPopup">New tasks and their rewards</button>
+        <button class="button secondary" type="button" data-open="assetLibraryPopup">Asset library · titles, badges, avatars and frames</button>
       </div>
     </div>
   </section>
+  <dialog id="assetLibraryPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><div class="eyebrow">RealmOX collection</div><h2>Asset library</h2><p class="admin-note">Browse artwork stored in Firebase Storage and inspect the title and badge catalogue used by the app.</p>
+    <div class="library-toolbar"><div id="assetTabs" class="library-tabs"><button class="button secondary active" data-category="all">All assets</button><button class="button secondary" data-category="title">Titles</button><button class="button secondary" data-category="badge">Badges</button><button class="button secondary" data-category="avatar">Avatars</button><button class="button secondary" data-category="frame">Frames</button></div><button id="refreshAssets" class="button secondary" type="button">Refresh library</button></div>
+    <label for="libraryAssetCategory">Upload reusable artwork to Firebase Storage</label><div class="library-toolbar"><select id="libraryAssetCategory"><option value="title">Title</option><option value="badge">Badge</option><option value="avatar">Avatar</option><option value="frame">Frame</option><option value="other">Other reward art</option></select><input id="libraryAssetName" placeholder="Asset name (optional for one file)"><input id="libraryFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple></div>
+    <div id="assetDropZone" class="drop-zone" tabindex="0">Drop image files here, or choose files above<br><small>PNG, JPEG or WebP · up to 10 MB per image</small></div><div id="libraryStatus" class="status"></div>
+    <h3>Stored artwork</h3><div id="assetGrid" class="asset-grid"></div><h3>Reward catalogue</h3><div class="admin-grid"><div><strong>Titles</strong><div id="titleCatalogue" class="catalogue-list"></div></div><div><strong>Badges</strong><div id="badgeCatalogue" class="catalogue-list"></div></div></div>
+  </div></dialog>
   <dialog id="currentTournamentPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>Current tournament details and edit</h2><div class="meta">Live month: <span id="signedInAsTournament"></span></div>
     <div id="tournamentOverview" class="tournament-overview"></div>
     <div class="tournament-editor" id="currentTournamentEditor"><div class="admin-grid">
       <div><label for="monthKey">Tournament month (YYYY_MM)</label><input id="monthKey" inputmode="numeric"></div><div><label for="tournamentTitle">Tournament name</label><input id="tournamentTitle"></div>
       <div><label for="rewardTitle">Monthly title</label><input id="rewardTitle"></div><div class="full"><label for="rewardDescription">Prize summary</label><textarea id="rewardDescription"></textarea></div>
       <div><label for="rules">Tournament rules (JSON list)</label><textarea id="rules" class="code-field"></textarea></div><div><label for="rewards">All prizes (JSON list, including title)</label><textarea id="rewards" class="code-field"></textarea></div>
+      <div class="full"><label>Drag artwork into the reward list</label><p class="admin-note">Drag a title, avatar, or frame below into the drop area to add it to the reward configuration.</p><div class="asset-grid" id="rewardAssetPicker"></div><div class="drop-zone reward-drop" id="rewardDropZone">Drop title, avatar, or frame artwork here to add its reward entries</div></div>
       <p class="admin-note full">Title is a reward at rank 1 (top 3). Frame entries cover ranks 1–5; avatar entries cover ranks 1–10. RC entries at ranks 1 and 11 set their distribution.</p>
       <div class="full"><label for="assetFile">Upload tournament artwork</label><div class="top-actions"><select id="assetCategory"><option value="title">Monthly title artwork (PNG)</option><option value="avatar">Tournament avatar</option><option value="frame">Frame (transparent PNG)</option><option value="other">Other prize art</option></select><input id="assetFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadAsset" class="button secondary" type="button">Upload image</button></div><input id="uploadedAssetUrl" readonly placeholder="Uploaded image URL appears here"><small>Title, avatar, and frame artwork is linked to matching prize rows; save changes to apply.</small></div>
     </div><div class="actions"><button id="loadTournament" class="button secondary" type="button">Refresh current details</button><button id="saveTournament" class="button" type="button">Save current tournament</button></div><div id="tournamentStatus" class="status"></div></div>
@@ -92,7 +101,7 @@
     $('adminPanel').classList.toggle('hidden', !allowed);
     $('signedInAs').textContent = activeEmail ? `Signed in as ${activeEmail}` : '';
     if (activeEmail && !allowed) status('accessStatus','This account does not have admin access. Sign in with the authorized admin account.');
-    else { $('accessStatus').className='status'; if (allowed) { loadTournament(); loadTasks(); } }
+    else { $('accessStatus').className='status'; if (allowed) { loadTournament(); loadTasks(); loadDashboard(); } }
   };
   onAuthStateChanged(auth, showUser);
   $('loginForm').addEventListener('submit', async event => {
@@ -167,6 +176,7 @@
         }
         prefixed('rewards',prefix).value=JSON.stringify(items,null,2);
       }
+      await loadRewardAssets(prefix);
       status(prefixed('tournamentStatus',prefix).id,['title','avatar','frame'].includes(category)?'Artwork uploaded and linked to this month’s matching rewards. Save the tournament to apply it.':'Artwork uploaded. Add its URL to the appropriate reward.',true);
     } catch(error) { status(prefixed('tournamentStatus',prefix).id,error.message); }
   }
@@ -176,8 +186,43 @@
       prefixed('rules',prefix).value=JSON.stringify(data.rules||[],null,2); prefixed('rewards',prefix).value=JSON.stringify(data.rewards?.length ? data.rewards : rewardTemplate(),null,2);
       const overview=data.overview||{}; const leaders=(overview.leaderboard||[]).map(row=>`#${row.rank} ${row.name} — ${row.month_xp} XP`);
       prefixed('tournamentOverview',prefix).textContent=[`${(overview.status||'unknown').toUpperCase()} · ${overview.start_date||'—'} through ${overview.end_date||'—'}`,`Participants: ${overview.participant_count??0}`,`Rewards distributed: ${overview.awarded_count??0}${overview.is_finalized?' (distributed awards are locked)':''}`,`Current top players:`,...(leaders.length?leaders:['No participants have earned tournament XP yet.'])].join('\n');
+      await loadRewardAssets(prefix);
       status(prefixed('tournamentStatus',prefix).id,'Tournament settings loaded.',true);
     } catch(error) { status(prefixed('tournamentStatus',prefix).id,error.message); }
+  }
+  async function loadRewardAssets(prefix='') {
+    try {
+      const data=await api('/admin/assets?category=all'), items=(data.assets||[]).filter(item=>['title','avatar','frame'].includes(item.category));
+      const host=prefixed('rewardAssetPicker',prefix); if(!host)return;
+      host.innerHTML=items.length?items.map(item=>`<article class="asset-tile reward-asset" draggable="true" data-reward-asset="${escapeHtml(JSON.stringify({category:item.category,name:item.name,image_url:item.image_url}))}"><div class="asset-thumb"><img loading="lazy" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name)}"></div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · drag to assign</small></article>`).join(''):'<p>No title, avatar, or frame artwork stored yet. Upload artwork in the asset library first.</p>';
+      host.querySelectorAll('[data-reward-asset]').forEach(card=>card.addEventListener('dragstart',event=>{event.dataTransfer.setData('application/json',card.dataset.rewardAsset);event.dataTransfer.effectAllowed='copy';}));
+      const drop=prefixed('rewardDropZone',prefix); if(drop&&!drop.dataset.ready){drop.dataset.ready='true';drop.addEventListener('dragover',event=>{event.preventDefault();drop.classList.add('dragover');});drop.addEventListener('dragleave',()=>drop.classList.remove('dragover'));drop.addEventListener('drop',event=>{event.preventDefault();drop.classList.remove('dragover');try{applyRewardAsset(prefix,JSON.parse(event.dataTransfer.getData('application/json')));}catch(error){status(prefixed('tournamentStatus',prefix).id,error.message||'Could not read dragged artwork.');}});}
+    } catch(error) { const host=prefixed('rewardAssetPicker',prefix); if(host)host.textContent=`Artwork library unavailable: ${error.message}`; }
+  }
+  function applyRewardAsset(prefix,asset) {
+    if(!['title','avatar','frame'].includes(asset?.category)||!asset.image_url)throw new Error('Only title, avatar, or frame artwork can be assigned to tournament rewards.');
+    const rewardsField=prefixed('rewards',prefix), titleField=prefixed('rewardTitle',prefix); let items=JSON.parse(rewardsField.value||'[]');
+    if(!Array.isArray(items))throw new Error('Tournament rewards must be a JSON list before assigning artwork.');
+    const count=asset.category==='title'?1:asset.category==='frame'?5:10;
+    for(let rank=1;rank<=count;rank++){
+      const label=asset.category==='title'?(titleField.value.trim()||'Monthly Champion Title'):`Monthly Tournament ${asset.category[0].toUpperCase()}${asset.category.slice(1)}`;
+      const entry={rank,kind:'digital',category:asset.category,name:label,image_url:asset.image_url};
+      const index=items.findIndex(item=>String(item?.category||'').toLowerCase()===asset.category&&Number(item?.rank)===rank);
+      if(index>=0)items[index]={...items[index],...entry};else items.push(entry);
+    }
+    rewardsField.value=JSON.stringify(items,null,2);
+    status(prefixed('tournamentStatus',prefix).id,`${asset.category} artwork assigned to ${count} reward slot${count===1?'':'s'}. Save the tournament to apply.`,true);
+  }
+  async function loadDashboard() {
+    try {
+      const data=await api(`/admin/tournament/${encodeURIComponent(currentMonth())}`), overview=data.overview||{};
+      $('dashboardTournamentName').textContent=data.title||`RealmOX Tournament · ${currentMonth()}`;
+      $('dashboardParticipants').textContent=overview.participant_count??0;
+      $('dashboardAwards').textContent=overview.awarded_count??0;
+      $('dashboardStatus').textContent=(overview.status||'unknown').toUpperCase();
+      $('dashboardTournamentStatus').textContent=`${overview.start_date||'—'} to ${overview.end_date||'—'} · ${overview.is_finalized?'Prize distribution has been finalized.':'Rewards have not been distributed yet.'}`;
+      $('dashboardLeaders').textContent=(overview.leaderboard||[]).slice(0,3).map(row=>`#${row.rank} ${row.name} · ${row.month_xp} XP`).join('   /   ')||'No players on the leaderboard yet.';
+    } catch(error) { $('dashboardTournamentName').textContent='Tournament overview unavailable'; $('dashboardTournamentStatus').textContent=error.message; }
   }
   async function saveTournament(prefix='') {
     try { const rules=JSON.parse(prefixed('rules',prefix).value||'[]'); const rewards=JSON.parse(prefixed('rewards',prefix).value||'[]');
@@ -188,12 +233,42 @@
     } catch(error) { status(prefixed('tournamentStatus',prefix).id,error.message); }
   }
   async function loadTasks() { try { const tasks=await api('/admin/tasks'); $('tasks').value=JSON.stringify(tasks,null,2); status('tasksStatus','Task definitions loaded.',true); } catch(error) { status('tasksStatus',error.message); } }
+  let assetCategoryFilter='all';
+  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  async function loadAssetLibrary() {
+    $('assetGrid').textContent='Loading assets…';
+    try {
+      const data=await api(`/admin/assets?category=${encodeURIComponent(assetCategoryFilter)}`);
+      const assets=data.assets||[];
+      $('assetGrid').innerHTML=assets.length?assets.map(item=>`<article class="asset-tile"><div class="asset-thumb"><img loading="lazy" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name)}"></div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · ${item.size_bytes?`${(item.size_bytes/1024).toFixed(0)} KB`:'size unavailable'}</small><small>${escapeHtml(item.storage_path)}</small><button class="button secondary asset-url" type="button" data-copy-url="${escapeHtml(item.image_url)}">Copy image URL</button></article>`).join(''):'<p>No stored artwork found for this filter.</p>';
+      $('titleCatalogue').innerHTML=(data.titles||[]).map(item=>`<p><strong>${escapeHtml(item.name)}</strong><br><small>${escapeHtml(item.code)} · ${escapeHtml(item.rarity)} · ${escapeHtml(item.source_type)}</small></p>`).join('')||'<p>No titles in the catalogue.</p>';
+      $('badgeCatalogue').innerHTML=(data.badges||[]).map(item=>`<p><strong>${escapeHtml(item.code)}</strong><br><small>${escapeHtml(item.task_name)} · ${escapeHtml(item.rarity)}</small></p>`).join('')||'<p>No badge rewards assigned to tasks.</p>';
+      $('assetGrid').querySelectorAll('[data-copy-url]').forEach(button=>button.onclick=async()=>{try{await navigator.clipboard.writeText(button.dataset.copyUrl);status('libraryStatus','Image URL copied.',true);}catch(_){status('libraryStatus',button.dataset.copyUrl,true);}});
+      status('libraryStatus',`${assets.length} stored asset${assets.length===1?'':'s'} loaded.`,true);
+    } catch(error) { $('assetGrid').textContent='Could not load assets.'; status('libraryStatus',error.message); }
+  }
+  async function uploadLibraryFiles(files) {
+    const category=$('libraryAssetCategory').value, providedName=$('libraryAssetName').value.trim();
+    if(!files?.length) return;
+    for(const file of files){
+      if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>10*1024*1024){status('libraryStatus',`${file.name}: choose a PNG, JPEG or WebP image up to 10 MB.`);continue;}
+      try{const token=await accessToken(),form=new FormData();form.append('file',file);form.append('category',category);const fileName=file.name.replace(/\.[^.]+$/,'');form.append('asset_name',files.length===1&&providedName?providedName:fileName);const response=await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}/admin/assets`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});const result=await response.json().catch(()=>null);if(!response.ok)throw new Error(result?.detail||`Upload failed (${response.status}).`);status('libraryStatus',`Uploaded ${file.name} to ${result.storage_path}.`,true);}catch(error){status('libraryStatus',`${file.name}: ${error.message}`);}
+    }
+    $('libraryFiles').value=''; $('libraryAssetName').value=''; await loadAssetLibrary();
+  }
   async function saveTasks() { try { const tasks=JSON.parse($('tasks').value||'[]'); if(!Array.isArray(tasks)) throw new Error('Tasks must be a JSON list.'); await api('/admin/tasks',{method:'PUT',body:JSON.stringify(tasks)}); status('tasksStatus','Tasks and rewards saved.',true); } catch(error) { status('tasksStatus',error.message); } }
   $('loadTournament').onclick=()=>loadTournament(); $('saveTournament').onclick=()=>saveTournament(); $('uploadAsset').onclick=()=>uploadAsset();
   $(`next_loadTournament`).onclick=()=>loadTournament('next'); $(`next_saveTournament`).onclick=()=>saveTournament('next'); $(`next_uploadAsset`).onclick=()=>uploadAsset('next');
   $('loadTasks').onclick=loadTasks; $('saveTasks').onclick=saveTasks;
+  $('refreshAssets').onclick=loadAssetLibrary;
+  $('assetTabs').querySelectorAll('[data-category]').forEach(button=>button.onclick=()=>{assetCategoryFilter=button.dataset.category;$('assetTabs').querySelectorAll('button').forEach(tab=>tab.classList.toggle('active',tab===button));loadAssetLibrary();});
+  $('libraryFiles').onchange=event=>uploadLibraryFiles([...event.target.files]);
+  const dropZone=$('assetDropZone');
+  for(const name of ['dragenter','dragover'])dropZone.addEventListener(name,event=>{event.preventDefault();dropZone.classList.add('dragover');});
+  for(const name of ['dragleave','drop'])dropZone.addEventListener(name,event=>{event.preventDefault();dropZone.classList.remove('dragover');});
+  dropZone.addEventListener('drop',event=>uploadLibraryFiles([...event.dataTransfer.files]));
   $('createTask').onclick=async()=>{try{const value=parseInt($('taskRequirementValue').value,10);if(!Number.isInteger(value)||value<1)throw new Error('Enter a requirement amount greater than zero.');await api('/admin/tasks',{method:'POST',body:JSON.stringify({code:$('taskCode').value.trim().toLowerCase(),name:$('taskName').value.trim(),description:$('taskDescription').value.trim(),category:$('taskCategory').value,requirement_type:$('taskRequirementType').value,requirement_value:value,rarity:$('taskRarity').value,title_reward:$('taskTitleReward').value.trim()||null,badge_reward:$('taskBadgeReward').value.trim()||null})});status('newTaskStatus','New task and reward added.',true);$('taskCode').value='';$('taskName').value='';$('taskDescription').value='';$('taskRequirementValue').value='1';$('taskTitleReward').value='';$('taskBadgeReward').value='';}catch(error){status('newTaskStatus',error.message);}};
-  document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>{const dialog=$(button.dataset.open);dialog.showModal();if(dialog.id==='currentTournamentPopup')loadTournament();if(dialog.id==='nextTournamentPopup')loadTournament('next');if(dialog.id==='currentTasksPopup')loadTasks();}));
+  document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>{const dialog=$(button.dataset.open);dialog.showModal();if(dialog.id==='currentTournamentPopup')loadTournament();if(dialog.id==='nextTournamentPopup')loadTournament('next');if(dialog.id==='currentTasksPopup')loadTasks();if(dialog.id==='assetLibraryPopup')loadAssetLibrary();}));
   document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
 </script>
 </body></html>
