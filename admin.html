@@ -50,7 +50,7 @@
     </div><div class="actions"><button id="loadTournament" class="button secondary" type="button">Refresh current details</button><button id="saveTournament" class="button" type="button">Save current tournament</button></div><div id="tournamentStatus" class="status"></div></div>
   </div></dialog>
   <dialog id="nextTournamentPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>Next tournament</h2><p class="admin-note">Prepare the next month’s details and rewards. This does not change the running tournament.</p><div id="nextTournamentSlot"></div></div></dialog>
-  <dialog id="currentTasksPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>Current tasks and their rewards</h2><p class="admin-note">Review or edit tasks currently available to users.</p><label for="tasks">Current task definitions (JSON list)</label><textarea id="tasks" class="code-field" style="min-height:360px"></textarea><div class="actions"><button id="loadTasks" class="button secondary" type="button">Refresh current tasks</button><button id="saveTasks" class="button" type="button">Save current tasks</button></div><div id="tasksStatus" class="status"></div></div></dialog>
+  <dialog id="currentTasksPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>Current tasks and their rewards</h2><p class="admin-note">Review tasks, change title or badge reward names, and drag artwork into a task reward slot.</p><label for="tasks">Current task definitions (JSON list)</label><textarea id="tasks" class="code-field" style="min-height:300px"></textarea><div class="admin-grid"><div><label for="taskAssetCode">Choose task</label><select id="taskAssetCode"></select></div><div><label for="taskAssetKind">Reward artwork slot</label><select id="taskAssetKind"><option value="title">Title artwork</option><option value="badge">Badge artwork</option></select></div></div><div class="asset-grid" id="taskRewardAssetPicker"></div><div class="drop-zone" id="taskRewardDropZone">Drop title or badge artwork here to attach it to the selected task</div><div class="actions"><button id="loadTasks" class="button secondary" type="button">Refresh current tasks</button><button id="saveTasks" class="button" type="button">Save tasks and reward artwork</button></div><div id="tasksStatus" class="status"></div></div></dialog>
   <dialog id="newTasksPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>New tasks and their rewards</h2><p class="admin-note">Add a new task without replacing the current task list.</p>
     <div class="admin-grid"><div><label for="taskCode">Task code</label><input id="taskCode" placeholder="example_task"></div><div><label for="taskName">Task name</label><input id="taskName"></div>
       <div class="full"><label for="taskDescription">Description</label><textarea id="taskDescription"></textarea></div>
@@ -232,7 +232,7 @@
       status(prefixed('tournamentStatus',prefix).id,'Tournament settings saved.',true);
     } catch(error) { status(prefixed('tournamentStatus',prefix).id,error.message); }
   }
-  async function loadTasks() { try { const tasks=await api('/admin/tasks'); $('tasks').value=JSON.stringify(tasks,null,2); status('tasksStatus','Task definitions loaded.',true); } catch(error) { status('tasksStatus',error.message); } }
+  async function loadTasks() { try { const tasks=await api('/admin/tasks'); $('tasks').value=JSON.stringify(tasks,null,2); $('taskAssetCode').innerHTML=(tasks||[]).map(task=>`<option value="${escapeHtml(task.code)}">${escapeHtml(task.name)} · ${escapeHtml(task.code)}</option>`).join(''); await loadTaskRewardAssets(); status('tasksStatus','Task definitions loaded.',true); } catch(error) { status('tasksStatus',error.message); } }
   let assetCategoryFilter='all';
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   async function loadAssetLibrary() {
@@ -255,6 +255,27 @@
       try{const token=await accessToken(),form=new FormData();form.append('file',file);form.append('category',category);const fileName=file.name.replace(/\.[^.]+$/,'');form.append('asset_name',files.length===1&&providedName?providedName:fileName);const response=await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}/admin/assets`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});const result=await response.json().catch(()=>null);if(!response.ok)throw new Error(result?.detail||`Upload failed (${response.status}).`);status('libraryStatus',`Uploaded ${file.name} to ${result.storage_path}.`,true);}catch(error){status('libraryStatus',`${file.name}: ${error.message}`);}
     }
     $('libraryFiles').value=''; $('libraryAssetName').value=''; await loadAssetLibrary();
+  }
+  let taskDropReady=false;
+  async function loadTaskRewardAssets() {
+    try {
+      const data=await api('/admin/assets?category=all'), assets=(data.assets||[]).filter(item=>['title','badge'].includes(item.category));
+      const host=$('taskRewardAssetPicker');
+      host.innerHTML=assets.length?assets.map(item=>`<article class="asset-tile" draggable="true" data-task-asset="${escapeHtml(JSON.stringify({category:item.category,name:item.name,image_url:item.image_url}))}"><div class="asset-thumb"><img loading="lazy" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name)}"></div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · drag to task</small></article>`).join(''):'<p>No title or badge images yet. Upload them in the Asset library.</p>';
+      host.querySelectorAll('[data-task-asset]').forEach(card=>card.addEventListener('dragstart',event=>{event.dataTransfer.setData('application/json',card.dataset.taskAsset);event.dataTransfer.effectAllowed='copy';}));
+      if(!taskDropReady){const zone=$('taskRewardDropZone');zone.addEventListener('dragover',event=>{event.preventDefault();zone.classList.add('dragover');});zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));zone.addEventListener('drop',event=>{event.preventDefault();zone.classList.remove('dragover');try{applyTaskArtwork(JSON.parse(event.dataTransfer.getData('application/json')));}catch(error){status('tasksStatus',error.message||'Could not read dragged artwork.');}});taskDropReady=true;}
+    } catch(error) { $('taskRewardAssetPicker').textContent=`Artwork library unavailable: ${error.message}`; }
+  }
+  function applyTaskArtwork(asset) {
+    const taskCode=$('taskAssetCode').value, slot=$('taskAssetKind').value;
+    if(asset?.category!==slot)throw new Error(`Choose ${slot} artwork before dropping this asset.`);
+    const tasks=JSON.parse($('tasks').value||'[]');if(!Array.isArray(tasks))throw new Error('Current tasks must be a JSON list.');
+    const task=tasks.find(item=>item?.code===taskCode);if(!task)throw new Error('Choose a task first.');
+    const suffix=String(asset.name||'').replace(/\.[^.]+$/,'');
+    task[slot==='title'?'title_image_url':'badge_image_url']=asset.image_url;
+    if(!task[slot==='title'?'title_reward':'badge_reward'])task[slot==='title'?'title_reward':'badge_reward']=suffix;
+    $('tasks').value=JSON.stringify(tasks,null,2);
+    status('tasksStatus',`${asset.name} assigned to ${task.name}. Save tasks to apply it.`,true);
   }
   async function saveTasks() { try { const tasks=JSON.parse($('tasks').value||'[]'); if(!Array.isArray(tasks)) throw new Error('Tasks must be a JSON list.'); await api('/admin/tasks',{method:'PUT',body:JSON.stringify(tasks)}); status('tasksStatus','Tasks and rewards saved.',true); } catch(error) { status('tasksStatus',error.message); } }
   $('loadTournament').onclick=()=>loadTournament(); $('saveTournament').onclick=()=>saveTournament(); $('uploadAsset').onclick=()=>uploadAsset();
