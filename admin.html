@@ -173,7 +173,10 @@
     return {assets,titles:assets.filter(x=>x.category==='title').map(x=>({code:x.name,name:x.name,image_url:x.image_url})),badges:assets.filter(x=>x.category==='badge').map(x=>({code:x.name,task_name:'Badge artwork',image_url:x.image_url}))};
   }
   async function getAdminAssetLibrary(category='all'){
-    if(auth.currentUser){try{return await firebaseAssetLibrary(category);}catch(_){}}
+    // If Firebase sign-in is active, surface Storage permission/configuration
+    // errors directly. Silently falling back hid the real failure behind the
+    // backend's generic bucket-configuration message.
+    if(auth.currentUser)return firebaseAssetLibrary(category);
     return api(`/admin/assets?category=${encodeURIComponent(category)}`);
   }
   function libraryObjectPath(category,name,file,monthKey){
