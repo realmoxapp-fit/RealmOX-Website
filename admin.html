@@ -66,9 +66,11 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+  import { getStorage, ref as storageRef, listAll, getDownloadURL, uploadBytes } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
   const config = window.REALMOX_CONFIG || {};
   const app = initializeApp(config.firebase);
   const auth = getAuth(app);
+  const storage = getStorage(app);
   // Some older/Google-setup RealmOX accounts authenticate with the backend
   // password hash instead of a Firebase email/password provider. Keep the
   // resulting short-lived RealmOX token in memory only, matching the app's
@@ -154,6 +156,42 @@
     if(!response.ok) throw new Error(data?.detail || `Request failed (${response.status}).`);
     return data;
   }
+  async function firebaseAssetLibrary(category='all') {
+    const roots={titles:'title',badges:'badge',avatars:'avatar',frames:'frame','tournament-rewards':'other'}, assets=[];
+    async function walk(directory,rootCategory){
+      const result=await listAll(directory);
+      for(const item of result.items){
+        let itemCategory=rootCategory;
+        if(rootCategory==='other'){const path=item.fullPath.toLowerCase();if(path.includes('/frame.'))itemCategory='frame';else if(path.includes('/avatar.'))itemCategory='avatar';}
+        if(category!=='all'&&category!==itemCategory)continue;
+        try{assets.push({category:itemCategory,name:item.name,storage_path:item.fullPath,image_url:await getDownloadURL(item)});}catch(_){}
+      }
+      for(const child of result.prefixes)await walk(child,rootCategory);
+    }
+    for(const [folder,kind] of Object.entries(roots))if(category==='all'||category===kind||folder==='tournament-rewards')await walk(storageRef(storage,folder),kind);
+    assets.sort((a,b)=>a.storage_path.localeCompare(b.storage_path));
+    return {assets,titles:assets.filter(x=>x.category==='title').map(x=>({code:x.name,name:x.name,image_url:x.image_url})),badges:assets.filter(x=>x.category==='badge').map(x=>({code:x.name,task_name:'Badge artwork',image_url:x.image_url}))};
+  }
+  async function getAdminAssetLibrary(category='all'){
+    if(auth.currentUser){try{return await firebaseAssetLibrary(category);}catch(_){}}
+    return api(`/admin/assets?category=${encodeURIComponent(category)}`);
+  }
+  function libraryObjectPath(category,name,file,monthKey){
+    const ext=(file.name.split('.').pop()||'png').toLowerCase(),safe=String(name||'asset').toLowerCase().replace(/[^a-z0-9_-]+/g,'_').replace(/^[_-]+|[_-]+$/g,'');
+    if(!safe)throw new Error('Enter a valid asset name.');
+    if(['title','frame'].includes(category)&&ext!=='png')throw new Error('Title and frame artwork must be PNG images.');
+    if(category==='title'&&monthKey)return `titles/${monthKey}_champion.png`;
+    if(category==='avatar'&&monthKey)return `tournament-rewards/${monthKey}/avatar.${ext}`;
+    if(category==='frame'&&monthKey)return `tournament-rewards/${monthKey}/frame.${ext}`;
+    return ({title:`titles/${safe}.${ext}`,badge:`badges/${safe}.${ext}`,avatar:`avatars/${safe}.${ext}`,frame:`frames/${safe}.${ext}`,other:`tournament-rewards/library/${safe}.${ext}`})[category]||`tournament-rewards/library/${safe}.${ext}`;
+  }
+  async function uploadFirebaseAsset(file,category,name,monthKey=''){
+    const path=libraryObjectPath(category,name,file,monthKey),target=storageRef(storage,path);
+    const uploaded=await uploadBytes(target,file,{contentType:file.type||'image/png'});
+    const image_url=await getDownloadURL(uploaded.ref);
+    if(category==='frame'&&monthKey===currentMonth())await uploadBytes(storageRef(storage,'frames/current_tournament_frame.png'),file,{contentType:'image/png'});
+    return {storage_path:path,image_url,category};
+  }
   const prefixed=(id,prefix='')=>$(prefix?`${prefix}_${id}`:id);
   async function uploadAsset(prefix='') {
     const file=prefixed('assetFile',prefix).files?.[0];
@@ -162,8 +200,13 @@
       const token=await accessToken(); const form=new FormData();
       const category=prefixed('assetCategory',prefix).value;
       form.append('file',file); form.append('category',category); form.append('month_key',prefixed('monthKey',prefix).value.trim());
-      const response=await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}/admin/tournament-assets`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});
-      const data=await response.json().catch(()=>null); if(!response.ok) throw new Error(data?.detail||`Upload failed (${response.status}).`);
+      let data;
+      if(auth.currentUser){
+        data=await uploadFirebaseAsset(file,category,`${category}_${prefixed('monthKey',prefix).value.trim()}`,prefixed('monthKey',prefix).value.trim());
+      }else{
+        const response=await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}/admin/tournament-assets`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});
+        data=await response.json().catch(()=>null); if(!response.ok) throw new Error(data?.detail||`Upload failed (${response.status}).`);
+      }
       prefixed('uploadedAssetUrl',prefix).value=data.image_url||'';
       if(['title','avatar','frame'].includes(category) && data.image_url) {
         let items=[]; try { const parsed=JSON.parse(prefixed('rewards',prefix).value||'[]'); if(Array.isArray(parsed)) items=parsed; } catch (_) {}
@@ -192,7 +235,7 @@
   }
   async function loadRewardAssets(prefix='') {
     try {
-      const data=await api('/admin/assets?category=all'), items=(data.assets||[]).filter(item=>['title','avatar','frame'].includes(item.category));
+      const data=await getAdminAssetLibrary('all'), items=(data.assets||[]).filter(item=>['title','avatar','frame'].includes(item.category));
       const host=prefixed('rewardAssetPicker',prefix); if(!host)return;
       host.innerHTML=items.length?items.map(item=>`<article class="asset-tile reward-asset" draggable="true" data-reward-asset="${escapeHtml(JSON.stringify({category:item.category,name:item.name,image_url:item.image_url}))}"><div class="asset-thumb"><img loading="lazy" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name)}"></div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · drag to assign</small></article>`).join(''):'<p>No title, avatar, or frame artwork stored yet. Upload artwork in the asset library first.</p>';
       host.querySelectorAll('[data-reward-asset]').forEach(card=>card.addEventListener('dragstart',event=>{event.dataTransfer.setData('application/json',card.dataset.rewardAsset);event.dataTransfer.effectAllowed='copy';}));
@@ -238,7 +281,7 @@
   async function loadAssetLibrary() {
     $('assetGrid').textContent='Loading assets…';
     try {
-      const data=await api(`/admin/assets?category=${encodeURIComponent(assetCategoryFilter)}`);
+      const data=await getAdminAssetLibrary(assetCategoryFilter);
       const assets=data.assets||[];
       $('assetGrid').innerHTML=assets.length?assets.map(item=>`<article class="asset-tile"><div class="asset-thumb"><img loading="lazy" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name)}"></div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · ${item.size_bytes?`${(item.size_bytes/1024).toFixed(0)} KB`:'size unavailable'}</small><small>${escapeHtml(item.storage_path)}</small><button class="button secondary asset-url" type="button" data-copy-url="${escapeHtml(item.image_url)}">Copy image URL</button></article>`).join(''):'<p>No stored artwork found for this filter.</p>';
       $('titleCatalogue').innerHTML=(data.titles||[]).map(item=>`<p><strong>${escapeHtml(item.name)}</strong><br><small>${escapeHtml(item.code)} · ${escapeHtml(item.rarity)} · ${escapeHtml(item.source_type)}</small></p>`).join('')||'<p>No titles in the catalogue.</p>';
@@ -252,14 +295,14 @@
     if(!files?.length) return;
     for(const file of files){
       if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>10*1024*1024){status('libraryStatus',`${file.name}: choose a PNG, JPEG or WebP image up to 10 MB.`);continue;}
-      try{const token=await accessToken(),form=new FormData();form.append('file',file);form.append('category',category);const fileName=file.name.replace(/\.[^.]+$/,'');form.append('asset_name',files.length===1&&providedName?providedName:fileName);const response=await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}/admin/assets`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});const result=await response.json().catch(()=>null);if(!response.ok)throw new Error(result?.detail||`Upload failed (${response.status}).`);status('libraryStatus',`Uploaded ${file.name} to ${result.storage_path}.`,true);}catch(error){status('libraryStatus',`${file.name}: ${error.message}`);}
+      try{const fileName=file.name.replace(/\.[^.]+$/,''),assetName=files.length===1&&providedName?providedName:fileName;let result;if(auth.currentUser){result=await uploadFirebaseAsset(file,category,assetName);}else{const token=await accessToken(),form=new FormData();form.append('file',file);form.append('category',category);form.append('asset_name',assetName);const response=await fetch(`${String(config.apiBaseUrl||'').replace(/\/$/,'')}/admin/assets`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});result=await response.json().catch(()=>null);if(!response.ok)throw new Error(result?.detail||`Upload failed (${response.status}).`);}status('libraryStatus',`Uploaded ${file.name} to ${result.storage_path}.`,true);}catch(error){status('libraryStatus',`${file.name}: ${error.message}`);}
     }
     $('libraryFiles').value=''; $('libraryAssetName').value=''; await loadAssetLibrary();
   }
   let taskDropReady=false;
   async function loadTaskRewardAssets() {
     try {
-      const data=await api('/admin/assets?category=all'), assets=(data.assets||[]).filter(item=>['title','badge'].includes(item.category));
+      const data=await getAdminAssetLibrary('all'), assets=(data.assets||[]).filter(item=>['title','badge'].includes(item.category));
       const host=$('taskRewardAssetPicker');
       host.innerHTML=assets.length?assets.map(item=>`<article class="asset-tile" draggable="true" data-task-asset="${escapeHtml(JSON.stringify({category:item.category,name:item.name,image_url:item.image_url}))}"><div class="asset-thumb"><img loading="lazy" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name)}"></div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · drag to task</small></article>`).join(''):'<p>No title or badge images yet. Upload them in the Asset library.</p>';
       host.querySelectorAll('[data-task-asset]').forEach(card=>card.addEventListener('dragstart',event=>{event.dataTransfer.setData('application/json',card.dataset.taskAsset);event.dataTransfer.effectAllowed='copy';}));
