@@ -11,7 +11,7 @@
 <header><div class="container nav"><a class="brand" href="index.html"><span class="logo">R</span>RealmOX Admin</a><nav><a href="index.html">Website</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a></nav></div></header>
 <main><div class="container admin-shell">
   <div class="eyebrow">Restricted access</div><h1>RealmOX Admin</h1>
-  <p class="lead">Manage this month’s tournament prizes, rules, and task rewards. Changes are checked by the RealmOX server.</p>
+  <p class="lead">Manage tournament dates, prizes, reward tiers, and task rewards. Changes are checked by the RealmOX server.</p>
   <section id="loginPanel" class="admin-card">
     <h2>Sign in</h2><p>Use the administrator account to continue.</p>
     <form id="loginForm"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
@@ -43,21 +43,22 @@
     <div class="tournament-editor" id="currentTournamentEditor"><div class="admin-grid">
       <div><label for="monthKey">Tournament month (YYYY_MM)</label><input id="monthKey" inputmode="numeric"></div><div><label for="tournamentTitle">Tournament name</label><input id="tournamentTitle"></div>
       <div><label for="rewardTitle">Monthly title</label><input id="rewardTitle"></div><div class="full"><label for="rewardDescription">Prize summary</label><textarea id="rewardDescription"></textarea></div>
+      <div><label for="tournamentStartDate">Starts (Asia/Kolkata)</label><input id="tournamentStartDate" type="date"></div><div><label for="tournamentEndDate">Ends (Asia/Kolkata)</label><input id="tournamentEndDate" type="date"></div>
       <div><label for="rules">Tournament rules (JSON list)</label><textarea id="rules" class="code-field"></textarea></div><div><label for="rewards">All prizes (JSON list, including title)</label><textarea id="rewards" class="code-field"></textarea></div>
       <div class="full"><label>Drag artwork into the reward list</label><p class="admin-note">Drag a title, avatar, or frame below into the drop area to add it to the reward configuration.</p><div class="asset-grid" id="rewardAssetPicker"></div><div class="drop-zone reward-drop" id="rewardDropZone">Drop title, avatar, or frame artwork here to add its reward entries</div></div>
-      <p class="admin-note full">Title is a reward at rank 1 (top 3). Frame entries cover ranks 1–5; avatar entries cover ranks 1–10. RC entries at ranks 1 and 11 set their distribution.</p>
+      <p class="admin-note full">Use rank and rank_to to set prize ranges. Suggested RC tiers are proposals: 1–3: 500, 4–10: 250, 11–20: 100, 21–100: 25, 101+: 10. Edit the JSON before saving if needed.</p>
       <div class="full"><label for="assetFile">Upload tournament artwork</label><div class="top-actions"><select id="assetCategory"><option value="title">Monthly title artwork (PNG)</option><option value="avatar">Tournament avatar</option><option value="frame">Frame (transparent PNG)</option><option value="other">Other prize art</option></select><input id="assetFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadAsset" class="button secondary" type="button">Upload image</button></div><input id="uploadedAssetUrl" readonly placeholder="Uploaded image URL appears here"><small>Title, avatar, and frame artwork is linked to matching prize rows; save changes to apply.</small></div>
     </div><div class="actions"><button id="loadTournament" class="button secondary" type="button">Refresh current details</button><button id="saveTournament" class="button" type="button">Save current tournament</button></div><div id="tournamentStatus" class="status"></div></div>
   </div></dialog>
   <dialog id="nextTournamentPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>Next tournament</h2><p class="admin-note">Prepare the next month’s details and rewards. This does not change the running tournament.</p><div id="nextTournamentSlot"></div></div></dialog>
-  <dialog id="currentTasksPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>Current tasks and their rewards</h2><p class="admin-note">Review tasks, change title or badge reward names, and drag artwork into a task reward slot.</p><label for="tasks">Current task definitions (JSON list)</label><textarea id="tasks" class="code-field" style="min-height:300px"></textarea><div class="admin-grid"><div><label for="taskAssetCode">Choose task</label><select id="taskAssetCode"></select></div><div><label for="taskAssetKind">Reward artwork slot</label><select id="taskAssetKind"><option value="title">Title artwork</option><option value="badge">Badge artwork</option></select></div></div><div class="asset-grid" id="taskRewardAssetPicker"></div><div class="drop-zone" id="taskRewardDropZone">Drop title or badge artwork here to attach it to the selected task</div><div class="actions"><button id="loadTasks" class="button secondary" type="button">Refresh current tasks</button><button id="saveTasks" class="button" type="button">Save tasks and reward artwork</button></div><div id="tasksStatus" class="status"></div></div></dialog>
+  <dialog id="currentTasksPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>Current tasks and their rewards</h2><p class="admin-note">Edit task rules, title or badge prizes, RC rewards, and active status. Deactivation preserves earned history.</p><label for="tasks">Current task definitions (JSON list)</label><textarea id="tasks" class="code-field" style="min-height:300px"></textarea><div class="admin-grid"><div><label for="taskAssetCode">Choose task</label><select id="taskAssetCode"></select></div><div><label for="taskAssetKind">Reward artwork slot</label><select id="taskAssetKind"><option value="title">Title artwork</option><option value="badge">Badge artwork</option></select></div></div><div class="asset-grid" id="taskRewardAssetPicker"></div><div class="drop-zone" id="taskRewardDropZone">Drop title or badge artwork here to attach it to the selected task</div><div class="actions"><button id="deactivateTask" class="button secondary" type="button">Deactivate selected task</button><button id="loadTasks" class="button secondary" type="button">Refresh current tasks</button><button id="saveTasks" class="button" type="button">Save tasks and reward artwork</button></div><div id="tasksStatus" class="status"></div></div></dialog>
   <dialog id="newTasksPopup" class="admin-dialog"><div class="admin-card"><button class="button secondary dialog-close" type="button" data-close>Close</button><h2>New tasks and their rewards</h2><p class="admin-note">Add a new task without replacing the current task list.</p>
     <div class="admin-grid"><div><label for="taskCode">Task code</label><input id="taskCode" placeholder="example_task"></div><div><label for="taskName">Task name</label><input id="taskName"></div>
       <div class="full"><label for="taskDescription">Description</label><textarea id="taskDescription"></textarea></div>
       <div><label for="taskCategory">Category</label><select id="taskCategory"><option value="workout">Workout</option><option value="diet">Diet</option><option value="general">General</option></select></div>
       <div><label for="taskRequirementType">Requirement</label><select id="taskRequirementType"><option value="total_workouts">Total workouts</option><option value="best_streak">Best streak</option><option value="level">Level</option></select></div>
       <div><label for="taskRequirementValue">Requirement amount</label><input id="taskRequirementValue" type="number" min="1" value="1"></div><div><label for="taskRarity">Rarity</label><select id="taskRarity"><option>common</option><option>rare</option><option>epic</option><option>legendary</option></select></div>
-      <div><label for="taskTitleReward">Title reward (optional)</label><input id="taskTitleReward"></div><div><label for="taskBadgeReward">Badge reward (optional)</label><input id="taskBadgeReward"></div></div>
+      <div><label for="taskTitleReward">Title reward (optional)</label><input id="taskTitleReward"></div><div><label for="taskBadgeReward">Badge reward (optional)</label><input id="taskBadgeReward"></div><div><label for="taskRewardRc">RC reward (optional)</label><input id="taskRewardRc" type="number" min="0" value="0"></div></div>
     <div class="actions"><button id="createTask" class="button" type="button">Add new task</button></div><div id="newTaskStatus" class="status"></div>
   </div></dialog>
   <div id="accessStatus" class="status"></div>
@@ -80,12 +81,25 @@
   const $ = id => document.getElementById(id);
   const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}`; };
   const rewardTemplate = () => [
-    {rank:1,kind:'digital',category:'rc',name:'Top 3 RC',amount_rc:2500},
-    {rank:11,kind:'digital',category:'rc',name:'Participation RC',amount_rc:100},
-    {rank:1,kind:'digital',category:'title',name:'Monthly Champion Title',image_url:''},
-    ...Array.from({length:5},(_,i)=>({rank:i+1,kind:'digital',category:'frame',name:'Monthly Tournament Frame',description:'Awarded to tournament ranks 1–5.',image_url:''})),
-    ...Array.from({length:10},(_,i)=>({rank:i+1,kind:'digital',category:'avatar',name:'Monthly Tournament Avatar',description:'Awarded to tournament ranks 1–10.',image_url:''}))
+    {rank:1,rank_to:3,kind:'digital',category:'rc',name:'Champion tier RC',amount_rc:500},
+    {rank:4,rank_to:10,kind:'digital',category:'rc',name:'Elite tier RC',amount_rc:250},
+    {rank:11,rank_to:20,kind:'digital',category:'rc',name:'Advanced tier RC',amount_rc:100},
+    {rank:21,rank_to:100,kind:'digital',category:'rc',name:'Participation RC',amount_rc:25},
+    {rank:101,rank_to:10000,kind:'digital',category:'rc',name:'All participant RC',amount_rc:10},
+    {rank:1,rank_to:3,kind:'digital',category:'title',name:'Monthly Champion Title',image_url:''},
+    {rank:1,rank_to:10,kind:'digital',category:'badge',name:'Monthly Tournament Badge',image_url:''},
+    {rank:1,rank_to:20,kind:'digital',category:'avatar',name:'Monthly Tournament Avatar',image_url:''},
+    {rank:1,rank_to:20,kind:'digital',category:'frame',name:'Monthly Tournament Frame',image_url:''}
   ];
+  function linkTournamentArtwork(items, category, imageUrl, titleName='') {
+    const matching=items.map(item=>String(item?.category||'').toLowerCase()===category
+      ? {...item,name:category==='title'?(titleName||item.name||'Monthly Champion Title'):item.name,image_url:imageUrl}
+      : item);
+    if(!matching.some(item=>String(item?.category||'').toLowerCase()===category)) {
+      matching.push(...rewardTemplate().filter(item=>item.category===category).map(item=>({...item,image_url:imageUrl})));
+    }
+    return matching;
+  }
   $('monthKey').value = currentMonth();
   const nextMonth = () => { const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()+1); return `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}`; };
   const nextEditor=$('currentTournamentEditor').cloneNode(true);
@@ -213,22 +227,47 @@
       prefixed('uploadedAssetUrl',prefix).value=data.image_url||'';
       if(['title','avatar','frame'].includes(category) && data.image_url) {
         let items=[]; try { const parsed=JSON.parse(prefixed('rewards',prefix).value||'[]'); if(Array.isArray(parsed)) items=parsed; } catch (_) {}
-        const count=category==='title'?1:category==='frame'?5:10;
-        for(let rank=1;rank<=count;rank++) {
-          const label=category==='title'?(prefixed('rewardTitle',prefix).value.trim()||'Monthly Champion Title'):`Monthly Tournament ${category[0].toUpperCase()}${category.slice(1)}`;
-          const artwork={rank,kind:'digital',category,name:label,image_url:data.image_url};
-          const index=items.findIndex(item=>String(item?.category||'').toLowerCase()===category&&Number(item?.rank)===rank);
-          if(index>=0) items[index]={...items[index],...artwork}; else items.push(artwork);
-        }
+        items=linkTournamentArtwork(items,category,data.image_url,prefixed('rewardTitle',prefix).value.trim());
         prefixed('rewards',prefix).value=JSON.stringify(items,null,2);
       }
       await loadRewardAssets(prefix);
       status(prefixed('tournamentStatus',prefix).id,['title','avatar','frame'].includes(category)?'Artwork uploaded and linked to this month’s matching rewards. Save the tournament to apply it.':'Artwork uploaded. Add its URL to the appropriate reward.',true);
     } catch(error) { status(prefixed('tournamentStatus',prefix).id,error.message); }
   }
+  async function getTournamentSnapshot(monthKey, useAppRoutes) {
+    if (!useAppRoutes) return api(`/admin/tournament/${encodeURIComponent(monthKey)}`);
+    const [config, ranking, awards, adminOverview] = await Promise.all([
+      api('/tournament'),
+      api('/tournament-ranking'),
+      api('/tournament-awards').catch(() => []),
+      api(`/admin/tournament/${encodeURIComponent(monthKey)}`).catch(() => null),
+    ]);
+    const leaders = Array.isArray(ranking) ? ranking : [];
+    const monthAwards = (Array.isArray(awards) ? awards : []).filter(row => row?.month === monthKey);
+    const rewards = Array.isArray(config.rewards) ? config.rewards : [];
+    const overview = adminOverview?.overview || {
+      month_key: monthKey,
+      start_date: config.start_date,
+      end_date: config.end_date,
+      status: config.status,
+      participant_count: leaders.length,
+      awarded_count: monthAwards.length,
+      is_finalized: monthAwards.length > 0,
+      leaderboard: leaders.map((row, index) => ({
+        rank: row.rank ?? index + 1,
+        name: row.name || 'RealmOX member',
+        month_xp: row.month_xp ?? row.score ?? 0,
+        avatar_id: row.avatar_id ?? 1,
+      })),
+    };
+    return {...config, rewards, overview};
+  }
   async function loadTournament(prefix='') {
-    try { const monthKey=prefixed('monthKey',prefix).value.trim(); const data=await api(`/admin/tournament/${encodeURIComponent(monthKey)}`);
+    try { const monthKey=prefixed('monthKey',prefix).value.trim(); const data=await getTournamentSnapshot(monthKey,!prefix && monthKey===currentMonth());
       prefixed('tournamentTitle',prefix).value=data.title||''; prefixed('rewardTitle',prefix).value=data.reward_title||''; prefixed('rewardDescription',prefix).value=data.reward_description||'';
+      const monthParts=monthKey.split('_');
+      prefixed('tournamentStartDate',prefix).value=data.start_date||data.overview?.start_date||`${monthParts[0]}-${monthParts[1]}-01`;
+      prefixed('tournamentEndDate',prefix).value=data.end_date||data.overview?.end_date||`${monthParts[0]}-${monthParts[1]}-28`;
       prefixed('rules',prefix).value=JSON.stringify(data.rules||[],null,2); prefixed('rewards',prefix).value=JSON.stringify(data.rewards?.length ? data.rewards : rewardTemplate(),null,2);
       const overview=data.overview||{}; const leaders=(overview.leaderboard||[]).map(row=>`#${row.rank} ${row.name} — ${row.month_xp} XP`);
       prefixed('tournamentOverview',prefix).textContent=[`${(overview.status||'unknown').toUpperCase()} · ${overview.start_date||'—'} through ${overview.end_date||'—'}`,`Participants: ${overview.participant_count??0}`,`Rewards distributed: ${overview.awarded_count??0}${overview.is_finalized?' (distributed awards are locked)':''}`,`Current top players:`,...(leaders.length?leaders:['No participants have earned tournament XP yet.'])].join('\n');
@@ -249,19 +288,14 @@
     if(!['title','avatar','frame'].includes(asset?.category)||!asset.image_url)throw new Error('Only title, avatar, or frame artwork can be assigned to tournament rewards.');
     const rewardsField=prefixed('rewards',prefix), titleField=prefixed('rewardTitle',prefix); let items=JSON.parse(rewardsField.value||'[]');
     if(!Array.isArray(items))throw new Error('Tournament rewards must be a JSON list before assigning artwork.');
-    const count=asset.category==='title'?1:asset.category==='frame'?5:10;
-    for(let rank=1;rank<=count;rank++){
-      const label=asset.category==='title'?(titleField.value.trim()||'Monthly Champion Title'):`Monthly Tournament ${asset.category[0].toUpperCase()}${asset.category.slice(1)}`;
-      const entry={rank,kind:'digital',category:asset.category,name:label,image_url:asset.image_url};
-      const index=items.findIndex(item=>String(item?.category||'').toLowerCase()===asset.category&&Number(item?.rank)===rank);
-      if(index>=0)items[index]={...items[index],...entry};else items.push(entry);
-    }
+    items=linkTournamentArtwork(items,asset.category,asset.image_url,titleField.value.trim());
     rewardsField.value=JSON.stringify(items,null,2);
-    status(prefixed('tournamentStatus',prefix).id,`${asset.category} artwork assigned to ${count} reward slot${count===1?'':'s'}. Save the tournament to apply.`,true);
+    status(prefixed('tournamentStatus',prefix).id,`${asset.category} artwork assigned to its prize tiers. Save the tournament to apply.`,true);
   }
   async function loadDashboard() {
     try {
-      const data=await api(`/admin/tournament/${encodeURIComponent(currentMonth())}`), overview=data.overview||{};
+      const monthKey=currentMonth();
+      const data=await getTournamentSnapshot(monthKey,true), overview=data.overview||{};
       $('dashboardTournamentName').textContent=data.title||`RealmOX Tournament · ${currentMonth()}`;
       $('dashboardParticipants').textContent=overview.participant_count??0;
       $('dashboardAwards').textContent=overview.awarded_count??0;
@@ -273,7 +307,7 @@
   async function saveTournament(prefix='') {
     try { const rules=JSON.parse(prefixed('rules',prefix).value||'[]'); const rewards=JSON.parse(prefixed('rewards',prefix).value||'[]');
       if(!Array.isArray(rules)||!Array.isArray(rewards)) throw new Error('Rules and rewards must be JSON lists.');
-      await api('/admin/tournament',{method:'PUT',body:JSON.stringify({month_key:prefixed('monthKey',prefix).value.trim(),title:prefixed('tournamentTitle',prefix).value.trim()||'RealmOX Monthly Tournament',reward_title:prefixed('rewardTitle',prefix).value.trim(),reward_description:prefixed('rewardDescription',prefix).value.trim(),rules,rewards})});
+      await api('/admin/tournament',{method:'PUT',body:JSON.stringify({month_key:prefixed('monthKey',prefix).value.trim(),title:prefixed('tournamentTitle',prefix).value.trim()||'RealmOX Monthly Tournament',reward_title:prefixed('rewardTitle',prefix).value.trim(),reward_description:prefixed('rewardDescription',prefix).value.trim(),start_date:prefixed('tournamentStartDate',prefix).value,end_date:prefixed('tournamentEndDate',prefix).value,rules,rewards})});
       await loadTournament(prefix);
       status(prefixed('tournamentStatus',prefix).id,'Tournament settings saved.',true);
     } catch(error) { status(prefixed('tournamentStatus',prefix).id,error.message); }
@@ -327,6 +361,7 @@
   $('loadTournament').onclick=()=>loadTournament(); $('saveTournament').onclick=()=>saveTournament(); $('uploadAsset').onclick=()=>uploadAsset();
   $(`next_loadTournament`).onclick=()=>loadTournament('next'); $(`next_saveTournament`).onclick=()=>saveTournament('next'); $(`next_uploadAsset`).onclick=()=>uploadAsset('next');
   $('loadTasks').onclick=loadTasks; $('saveTasks').onclick=saveTasks;
+  $('deactivateTask').onclick=async()=>{try{const code=$('taskAssetCode').value;if(!code)throw new Error('Choose a task first.');await api(`/admin/tasks/${encodeURIComponent(code)}`,{method:'DELETE'});const tasks=JSON.parse($('tasks').value||'[]');const task=tasks.find(item=>item?.code===code);if(task)task.is_active=false;$('tasks').value=JSON.stringify(tasks,null,2);status('tasksStatus',`Task ${code} deactivated. Existing earned rewards remain in user histories.`,true);}catch(error){status('tasksStatus',error.message);}};
   $('refreshAssets').onclick=loadAssetLibrary;
   $('assetTabs').querySelectorAll('[data-category]').forEach(button=>button.onclick=()=>{assetCategoryFilter=button.dataset.category;$('assetTabs').querySelectorAll('button').forEach(tab=>tab.classList.toggle('active',tab===button));loadAssetLibrary();});
   $('libraryFiles').onchange=event=>uploadLibraryFiles([...event.target.files]);
@@ -334,7 +369,7 @@
   for(const name of ['dragenter','dragover'])dropZone.addEventListener(name,event=>{event.preventDefault();dropZone.classList.add('dragover');});
   for(const name of ['dragleave','drop'])dropZone.addEventListener(name,event=>{event.preventDefault();dropZone.classList.remove('dragover');});
   dropZone.addEventListener('drop',event=>uploadLibraryFiles([...event.dataTransfer.files]));
-  $('createTask').onclick=async()=>{try{const value=parseInt($('taskRequirementValue').value,10);if(!Number.isInteger(value)||value<1)throw new Error('Enter a requirement amount greater than zero.');await api('/admin/tasks',{method:'POST',body:JSON.stringify({code:$('taskCode').value.trim().toLowerCase(),name:$('taskName').value.trim(),description:$('taskDescription').value.trim(),category:$('taskCategory').value,requirement_type:$('taskRequirementType').value,requirement_value:value,rarity:$('taskRarity').value,title_reward:$('taskTitleReward').value.trim()||null,badge_reward:$('taskBadgeReward').value.trim()||null})});status('newTaskStatus','New task and reward added.',true);$('taskCode').value='';$('taskName').value='';$('taskDescription').value='';$('taskRequirementValue').value='1';$('taskTitleReward').value='';$('taskBadgeReward').value='';}catch(error){status('newTaskStatus',error.message);}};
+  $('createTask').onclick=async()=>{try{const value=parseInt($('taskRequirementValue').value,10),rewardRc=parseInt($('taskRewardRc').value||'0',10);if(!Number.isInteger(value)||value<1)throw new Error('Enter a requirement amount greater than zero.');if(!Number.isInteger(rewardRc)||rewardRc<0)throw new Error('Enter a valid RC reward.');await api('/admin/tasks',{method:'POST',body:JSON.stringify({code:$('taskCode').value.trim().toLowerCase(),name:$('taskName').value.trim(),description:$('taskDescription').value.trim(),category:$('taskCategory').value,requirement_type:$('taskRequirementType').value,requirement_value:value,rarity:$('taskRarity').value,title_reward:$('taskTitleReward').value.trim()||null,badge_reward:$('taskBadgeReward').value.trim()||null,reward_rc:rewardRc})});status('newTaskStatus','New task and rewards added.',true);$('taskCode').value='';$('taskName').value='';$('taskDescription').value='';$('taskRequirementValue').value='1';$('taskTitleReward').value='';$('taskBadgeReward').value='';$('taskRewardRc').value='0';}catch(error){status('newTaskStatus',error.message);}};
   document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>{const dialog=$(button.dataset.open);dialog.showModal();if(dialog.id==='currentTournamentPopup')loadTournament();if(dialog.id==='nextTournamentPopup')loadTournament('next');if(dialog.id==='currentTasksPopup')loadTasks();if(dialog.id==='assetLibraryPopup')loadAssetLibrary();}));
   document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
 </script>
