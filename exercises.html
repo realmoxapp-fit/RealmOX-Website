@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Exercise Library — RealmOX</title><link rel="stylesheet" href="assets/style.css">
+  <style>
+    .filters { display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px; margin:24px 0; }
+    .exercise-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+    .exercise-card { background:linear-gradient(180deg,var(--card-2),var(--card)); border:1px solid var(--border); border-radius:16px; padding:20px; }
+    .exercise-card h2 { margin:0 0 8px; font-size:1.2rem; }
+    .tags { display:flex; flex-wrap:wrap; gap:7px; margin:12px 0; }
+    .tag { background:#101612; border:1px solid var(--border); color:var(--muted); border-radius:999px; padding:3px 9px; font-size:.82rem; }
+    details { margin-top:14px; } details summary { cursor:pointer; color:var(--accent); }
+    .empty { padding:20px; border:1px solid var(--border); border-radius:12px; }
+    @media(max-width:700px) { .filters { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<header><div class="container nav"><a class="brand" href="index.html"><span class="logo">R</span>RealmOX</a><nav><a href="index.html">About</a><a class="active" href="exercises.html">Exercises</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="referral-rules.html">Referral Rules</a><a href="support.html">Support</a><a href="delete-account.html">Delete Account</a></nav></div></header>
+<main><div class="container">
+  <div class="eyebrow">Training reference</div><h1>Exercise Library</h1>
+  <p class="lead">Browse RealmOX’s exercise catalogue by name, muscle group, difficulty, or equipment. This library is generated from the same catalogue used by the app.</p>
+  <div class="notice"><p>Exercise guidance is general information. Choose a variation that suits your ability and available equipment, and stop if you feel pain or unwell.</p></div>
+  <div class="filters">
+    <input id="search" type="search" placeholder="Search exercises or muscles" aria-label="Search exercises">
+    <select id="body-part" aria-label="Filter by muscle group"><option value="">All muscle groups</option></select>
+    <select id="difficulty" aria-label="Filter by difficulty"><option value="">All difficulty levels</option></select>
+  </div>
+  <p id="count" class="meta" aria-live="polite">Loading exercise catalogue…</p>
+  <div id="library" class="exercise-grid"></div>
+</div></main>
+<footer><div class="container"><div class="footer-links"><a href="index.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms & Conditions</a><a href="support.html">Support</a></div><p><small>RealmOX · Exercise catalogue</small></p></div></footer>
+<script>
+  const library = document.querySelector('#library');
+  const search = document.querySelector('#search');
+  const bodyPart = document.querySelector('#body-part');
+  const difficulty = document.querySelector('#difficulty');
+  const count = document.querySelector('#count');
+  let exercises = [];
+  const label = value => String(value || '').replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+  function option(select, value) { const item = document.createElement('option'); item.value = value; item.textContent = label(value); select.append(item); }
+  function card(exercise) {
+    const article = document.createElement('article'); article.className = 'exercise-card';
+    const heading = document.createElement('h2'); heading.textContent = exercise.exercise_name || 'Exercise'; article.append(heading);
+    const description = document.createElement('p'); description.textContent = exercise.description || ''; article.append(description);
+    const tags = document.createElement('div'); tags.className = 'tags';
+    [exercise.body_part, exercise.difficulty, exercise.equipment].filter(Boolean).forEach(value => { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = label(value); tags.append(tag); });
+    article.append(tags);
+    const muscles = [...(exercise.primary_muscles || []), ...(exercise.secondary_muscles || [])];
+    if (muscles.length) { const p = document.createElement('p'); p.textContent = `Muscles: ${muscles.map(label).join(', ')}`; article.append(p); }
+    if (exercise.instructions?.length || exercise.tips?.length) {
+      const details = document.createElement('details'); const summary = document.createElement('summary'); summary.textContent = 'Instructions and tips'; details.append(summary);
+      for (const [title, values] of [['Instructions', exercise.instructions], ['Tips', exercise.tips]]) if (values?.length) {
+        const sub = document.createElement('strong'); sub.textContent = title; details.append(sub);
+        const list = document.createElement('ol'); for (const text of values) { const li = document.createElement('li'); li.textContent = text; list.append(li); } details.append(list);
+      }
+      article.append(details);
+    }
+    return article;
+  }
+  function render() {
+    const term = search.value.trim().toLowerCase();
+    const filtered = exercises.filter(item => {
+      const text = [item.exercise_name, item.description, item.equipment, item.body_part, ...(item.primary_muscles || []), ...(item.secondary_muscles || [])].join(' ').toLowerCase();
+      return (!term || text.includes(term)) && (!bodyPart.value || (item.body_part || '').toLowerCase() === bodyPart.value) && (!difficulty.value || (item.difficulty || '').toLowerCase() === difficulty.value);
+    });
+    count.textContent = `${filtered.length} of ${exercises.length} exercises`;
+    library.replaceChildren(...filtered.map(card));
+    if (!filtered.length) { const message = document.createElement('p'); message.className = 'empty'; message.textContent = 'No exercises match these filters.'; library.append(message); }
+  }
+  fetch('exercises.json').then(response => { if (!response.ok) throw new Error('Catalogue unavailable'); return response.json(); }).then(data => {
+    exercises = data.exercises || [];
+    [...new Set(exercises.map(item => (item.body_part || '').toLowerCase()).filter(Boolean))].sort().forEach(value => option(bodyPart, value));
+    [...new Set(exercises.map(item => (item.difficulty || '').toLowerCase()).filter(Boolean))].sort().forEach(value => option(difficulty, value));
+    render();
+  }).catch(() => { count.textContent = 'The exercise catalogue is temporarily unavailable.'; });
+  [search, bodyPart, difficulty].forEach(control => control.addEventListener('input', render));
+</script>
+</body></html>

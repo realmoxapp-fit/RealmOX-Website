@@ -3,9 +3,10 @@
 This folder is a static public website intended for GitHub Pages. It contains:
 
 - About / app information
+- Data-driven, searchable Exercise Library (`exercises.html` and `exercises.json`)
 - Privacy Policy
 - Terms & Conditions
-- Official RealmOX Currency Referral Programme Rules
+- RealmOX Referral Programme Rules (message-only status until cash rewards are formally enabled)
 - Help & Support information
 - Public account deletion page
 - Restricted tournament and task admin (`admin.html`)
